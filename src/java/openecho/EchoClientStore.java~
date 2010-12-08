@@ -1,0 +1,28 @@
+package openecho;
+
+import java.util.Map;
+import org.cometd.bayeux.server.BayeuxServer;
+import org.cometd.bayeux.server.ServerSession;
+
+/**
+ *
+ * @author jmarsden
+ */
+public class EchoClientStore {
+
+	private static EchoClientStore instance = null;
+	
+	public Map<String, EchoClient> clients;
+	
+	private EchoClientStore() {
+		clients = new Map<String, EchoClient>();
+	}
+	
+	public static EchoClientStore getInstance() {
+		if(instance == null) {
+			instance = new EchoClientStore();
+		}
+		return instance;
+	}
+	
+}

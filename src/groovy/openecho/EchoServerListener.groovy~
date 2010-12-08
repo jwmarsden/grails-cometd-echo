@@ -1,0 +1,17 @@
+package openecho
+
+import org.apache.log4j.*
+import org.cometd.bayeux.server.ServerChannel
+import org.cometd.bayeux.server.ServerSession
+import org.cometd.bayeux.server.ServerMessage
+
+class EchoServerListener implements ServerChannel.MessageListener {
+
+    Logger log = Logger.getInstance(EchoServerListener.class)
+
+    public boolean onMessage(ServerSession from, ServerChannel channel, ServerMessage.Mutable message) {
+        log.debug "Message:" + message.getData()
+        //channel.publish(message.getData())
+    }
+
+}

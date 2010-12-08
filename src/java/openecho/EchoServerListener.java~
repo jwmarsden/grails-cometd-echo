@@ -1,0 +1,49 @@
+package openecho;
+
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.log4j.*;
+import org.cometd.bayeux.server.ServerChannel;
+import org.cometd.bayeux.server.ServerSession;
+import org.cometd.bayeux.server.ServerMessage;
+import org.cometd.bayeux.Bayeux;
+import org.cometd.bayeux.server.BayeuxServer;
+
+public class EchoServerListener implements ServerChannel.MessageListener {
+
+    Logger log = Logger.getLogger("" + EchoServerListener.class);
+    BayeuxServer bayeux;
+    
+    public EchoServerListener(BayeuxServer bayeux) {
+    	    this.bayeux = bayeux;
+    }
+    
+    public boolean onMessage(ServerSession from, ServerChannel channel, ServerMessage.Mutable message) {
+    	System.out.println("Echo Server Listener!");
+        String id = from.getId();
+    	log.error("Server Message From " + id + ":" + message.getData());
+        EchoClientStore store = EchoClientStore.getInstance();
+        Iterator<EchoClient> clientIterator = store.getClients().iterator();
+
+        ServerChannel publishChannel = bayeux.getChannel("/openecho/echo/broadcast");
+        Map<String,Object> messageMap = message.getDataAsMap(false);
+        if(messageMap == null) {
+        	System.out.println("Message Map is Null.");
+        } else {
+        	System.out.println("Message Map is Not Null.");
+        }
+        
+        while(clientIterator.hasNext()) {
+        	EchoClient client = clientIterator.next();
+        	System.out.println("Sending Message to " + client.getClientId());
+        	Map<String, Object> data = new HashMap<String, Object>();
+        	data.put("from", id);
+        	data.put("message", data.get("message"));
+        	publishChannel.publish(from, data, client.getClientId());
+        }
+        return true;
+    }
+
+}

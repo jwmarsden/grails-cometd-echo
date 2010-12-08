@@ -1,0 +1,20 @@
+package openecho;
+
+
+import org.cometd.bayeux.server.BayeuxServer;
+import org.cometd.bayeux.server.ServerSession;
+/**
+ *
+ * @author jmarsden
+ */
+public class EchoSessionListener implements BayeuxServer.SessionListener {
+
+    public void sessionAdded(ServerSession session) {
+        
+        System.out.println(session.toString());
+    }
+
+    public void sessionRemoved(ServerSession session, boolean timedout) {
+        System.out.println(session.toString());
+    }
+}

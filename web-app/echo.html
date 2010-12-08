@@ -1,0 +1,158 @@
+<html>
+	<head>
+		<title>Echo Test</title>
+		<style type="text/css">
+			body {
+				font-family:"Tahoma", Sans-serif;
+			}
+		</style>
+		<script src="/grails-cometd-chat.git/js/dojo/dojo.js" type="text/javascript"></script>       
+		<script type="text/javascript">   
+			/** 
+			** Global Stuff
+			**/
+		
+			var logLevel = 10;
+
+			function stringFormat(format, arguments) {
+			    var str = format;
+			    for (var i = 0; i < arguments.length; i++) {
+				str = str.replace('{' + i + '}', arguments[i]);
+			    }
+			    return str;
+			}
+			
+			function log(message,level) {
+			    if(window.console != undefined) {
+				if(!level || (level <= logLevel)) {
+				    console.debug(message);
+				}
+			    } else { /* Stupid IE - get firebug lite and this will work. */ }
+			}
+			
+			/** 
+			** Import and Setup Stuff
+			**/			
+			dojo.require('dojo.html');
+			dojo.require('dojox.cometd');
+
+			var cometd = dojox.cometd;
+			
+			dojo.addOnLoad(_init);
+			dojo.addOnUnload(_destroy);
+	
+			function _init() {
+				log('Init Channels.');
+				dojox.cometd.init('http://202.7.243.179:8080/grails-cometd-chat.git/cometd');
+				_refresh();
+			}
+	
+			function _destroy() {
+				log('Destroy Channels.');
+				_appUnsubscribe();
+			}
+			
+			var _publishSubscription;
+			var _broadcastSubscription;
+			
+			// The idempotent method
+			function _refresh()
+			{
+				_appUnsubscribe();
+				_appSubscribe();
+			}
+			
+			function _appUnsubscribe()
+			{
+				if (_publishSubscription) 
+					cometd.unsubscribe(_publishSubscription);
+				_publishSubscription = null;
+				if (_broadcastSubscription) 
+					cometd.unsubscribe(_broadcastSubscription);
+				_broadcastSubscription = null;
+			}
+			
+			function _appSubscribe()
+			{
+				_publishSubscription = dojox.cometd.subscribe('/openecho/echo/publish', onPublishMessage);
+				_broadcastSubscription = dojox.cometd.subscribe('/openecho/echo/broadcast', onBroadcastMessage);
+			}
+			
+			
+			var _connected = false;
+			
+			cometd.addListener('/meta/connect', function(message)
+			{
+			    // if (cometd.getStatus() === 'disconnecting' || cometd.getStatus() === 'disconnected')
+			    if (cometd.isDisconnected()) // Available since 1.1.2
+			    {
+				return;
+			    }
+			    var wasConnected = _connected;
+			    _connected = message.successful;
+			    if (!wasConnected && _connected)
+			    {
+			    	    log('reconnected',1);
+			    	    _refresh();
+				// Reconnected
+			    }
+			    else if (wasConnected && !_connected)
+			    {
+			    	    log('dissconnected',1);
+				// Disconnected
+			    }
+			});
+			
+			cometd.addListener('/meta/disconnect', function(message)
+			{
+			    if (message.successful)
+			    {
+				_connected = false;
+			    }
+			});
+			
+			
+			
+			/** 
+			** Application
+			**/
+			
+
+			function publishMessage(m) 
+			{
+				var inputField = dojo.byId("input");
+				log(inputField, 1);
+				log(stringFormat("Publish Message: {0}", [dojo.attr(inputField, "value")]), 1);
+				dojox.cometd.publish('/openecho/echo/publish', { message: dojo.attr(inputField, "value") });
+				dojo.attr(inputField, "value", "");
+			}
+			
+			function broadcastMessage(m) 
+			{
+				log(stringFormat("Broadcast Message: {0}", [m]), 1);
+				dojox.cometd.publish('/openecho/echo/broadcast', { message: "Hello Broadcast, Echo!" });
+			}
+			
+			function onPublishMessage(m) 
+			{
+			}
+			
+			function onBroadcastMessage(m) 
+			{
+				log(m, 1);
+				var outputArea = dojo.byId("output");
+				log(outputArea,1);
+				//dojo.html.set(outputArea, m.data.message);
+				dojo.place(dojo.create("div", { innerHTML: m.data.message }), outputArea, "first");
+			}
+			
+			
+		</script>  
+	</head>
+	<body>
+		<h1>Echo Test</h1>
+		<div id="output" style="height:400;border:1px solid #000;overflow:scroll;"></div>
+		<input type="text" id="input" size="50"></input><button onclick="publishMessage()">Publish Message</button>
+		<hr />
+	</body>
+</html>
